@@ -29,6 +29,8 @@ workflows:
       - /tmp/xcodebuild_logs/*.log
   ios-ipa:
     name: Espace équipe iOS - IPA signé
+    integrations:
+      app_store_connect: Codemagic Mikes valide
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
@@ -60,5 +62,10 @@ workflows:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
       - build/ios/**/*.dSYM
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: false
 
 
