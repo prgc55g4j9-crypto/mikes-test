@@ -1,0 +1,63 @@
+workflows:
+  ios-simulator:
+    name: Espace équipe iOS - Simulateur
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      node: "24"
+      xcode: latest
+    scripts:
+      - name: Préparer les sources iOS version 72
+        script: unzip -o Espace-equipe-iOS-v72-Codemagic.zip -d .
+      - name: Installer les dépendances verrouillées
+        script: npm ci
+      - name: Ajuster le logo iOS sans recadrage
+        script: sips -z 1024 1024 assets/AppIcon-source.png --out ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png
+      - name: Vérifier les sources
+        script: npm run check
+      - name: Synchroniser Capacitor et SPM
+        script: npx cap sync ios
+      - name: Compiler sans signature
+        script: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
+      - name: Regrouper l'application simulateur
+        script: |
+          cd build/DerivedData/Build/Products/Debug-iphonesimulator
+          ditto -c -k --sequesterRsrc --keepParent App.app espace-equipe-simulator.zip
+    artifacts:
+      - build/DerivedData/Build/Products/Debug-iphonesimulator/espace-equipe-simulator.zip
+      - /tmp/xcodebuild_logs/*.log
+  ios-ipa:
+    name: Espace équipe iOS - IPA signé
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      node: "24"
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: ca.mikes.equipe
+    scripts:
+      - name: Préparer les sources iOS version 72
+        script: unzip -o Espace-equipe-iOS-v72-Codemagic.zip -d .
+      - name: Installer les dépendances verrouillées
+        script: npm ci
+      - name: Ajuster le logo iOS sans recadrage
+        script: sips -z 1024 1024 assets/AppIcon-source.png --out ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png
+      - name: Vérifier les sources
+        script: npm run check
+      - name: Synchroniser Capacitor et SPM
+        script: npx cap sync ios
+      - name: Numéro de compilation
+        script: |
+          cd ios/App
+          agvtool new-version -all "$BUILD_NUMBER"
+      - name: Appliquer les certificats et profils Codemagic
+        script: xcode-project use-profiles
+      - name: Compiler l'IPA
+        script: xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - build/ios/**/*.dSYM
+
