@@ -16,7 +16,9 @@ workflows:
       - name: Vérifier les sources
         script: npm run check
       - name: Synchroniser Capacitor et SPM
-        script: npx cap sync ios
+        script: |
+          npx cap sync ios
+          python3 -c 'from pathlib import Path; p=Path("ios/App/App.xcodeproj/project.pbxproj"); s=p.read_text(); s=s.replace("TARGETED_DEVICE_FAMILY = \"1,2\";", "TARGETED_DEVICE_FAMILY = 1;"); p.write_text(s); assert "TARGETED_DEVICE_FAMILY = 1;" in s and "TARGETED_DEVICE_FAMILY = \"1,2\";" not in s'
       - name: Compiler sans signature
         script: |
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
@@ -49,11 +51,13 @@ workflows:
       - name: Vérifier les sources
         script: npm run check
       - name: Synchroniser Capacitor et SPM
-        script: npx cap sync ios
+        script: |
+          npx cap sync ios
+          python3 -c 'from pathlib import Path; p=Path("ios/App/App.xcodeproj/project.pbxproj"); s=p.read_text(); s=s.replace("TARGETED_DEVICE_FAMILY = \"1,2\";", "TARGETED_DEVICE_FAMILY = 1;"); p.write_text(s); assert "TARGETED_DEVICE_FAMILY = 1;" in s and "TARGETED_DEVICE_FAMILY = \"1,2\";" not in s'
       - name: Numéro de compilation
         script: |
           cd ios/App
-          agvtool new-version -all "$BUILD_NUMBER"
+          agvtool new-version -all "$((BUILD_NUMBER + 100))"
       - name: Appliquer les certificats et profils Codemagic
         script: xcode-project use-profiles
       - name: Compiler l'IPA
@@ -67,5 +71,3 @@ workflows:
         auth: integration
         submit_to_testflight: false
         submit_to_app_store: false
-
-
