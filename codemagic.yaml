@@ -7,8 +7,8 @@ workflows:
       node: "24"
       xcode: latest
     scripts:
-      - name: Préparer les sources iOS version 77
-        script: unzip -o Espace-equipe-iOS-v77-Codemagic.zip -d .
+      - name: Préparer les sources iOS version 78
+        script: unzip -o Espace-equipe-iOS-v78-Codemagic.zip -d .
       - name: Installer les dépendances verrouillées
         script: npm ci
       - name: Ajuster le logo iOS sans recadrage
@@ -42,8 +42,8 @@ workflows:
         distribution_type: app_store
         bundle_identifier: ca.mikes.equipe
     scripts:
-      - name: Préparer les sources iOS version 77
-        script: unzip -o Espace-equipe-iOS-v77-Codemagic.zip -d .
+      - name: Préparer les sources iOS version 78
+        script: unzip -o Espace-equipe-iOS-v78-Codemagic.zip -d .
       - name: Installer les dépendances verrouillées
         script: npm ci
       - name: Ajuster le logo iOS sans recadrage
@@ -69,5 +69,5 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: false
+        submit_to_testflight: true
         submit_to_app_store: false
