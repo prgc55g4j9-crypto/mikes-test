@@ -8,7 +8,9 @@ workflows:
       xcode: latest
     scripts:
       - name: Préparer les sources iOS version 78
-        script: unzip -o Espace-equipe-iOS-v78-Codemagic.zip -d .
+        script: |
+          unzip -o Espace-equipe-iOS-v78-Codemagic.zip -d .
+          git apply fixes/ios-notifications.patch
       - name: Installer les dépendances verrouillées
         script: npm ci
       - name: Ajuster le logo iOS sans recadrage
@@ -43,7 +45,9 @@ workflows:
         bundle_identifier: ca.mikes.equipe
     scripts:
       - name: Préparer les sources iOS version 78
-        script: unzip -o Espace-equipe-iOS-v78-Codemagic.zip -d .
+        script: |
+          unzip -o Espace-equipe-iOS-v78-Codemagic.zip -d .
+          git apply fixes/ios-notifications.patch
       - name: Installer les dépendances verrouillées
         script: npm ci
       - name: Ajuster le logo iOS sans recadrage
