@@ -1,0 +1,78 @@
+diff --git a/ios/App/App/AppDelegate.swift b/ios/App/App/AppDelegate.swift
+index 129c915..0a1ec8f 100644
+--- a/ios/App/App/AppDelegate.swift
++++ b/ios/App/App/AppDelegate.swift
+@@ -9,7 +9,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
+ 
+     // Re-register on launch and when returning to the foreground. APNs may
+     // rotate a token without showing another permission prompt.
+-    private func refreshRemoteNotificationRegistration() {
++    static func refreshRemoteNotificationRegistration() {
+         UNUserNotificationCenter.current().getNotificationSettings { settings in
+             guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
+             DispatchQueue.main.async { UIApplication.shared.registerForRemoteNotifications() }
+@@ -33,7 +33,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
+ 
+     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+         UNUserNotificationCenter.current().delegate = self
+-        refreshRemoteNotificationRegistration()
++        Self.refreshRemoteNotificationRegistration()
+         return true
+     }
+ 
+@@ -51,13 +51,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
+         // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
+     }
+ 
+-    func applicationDidBecomeActive(_ application: UIApplication) {
+-        refreshRemoteNotificationRegistration()
+-        MikesPushController.current?.emit("mikes-app-active", detail: [:])
+-        MikesPushController.current?.syncBadge()
+-        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+-    }
+-
+     func applicationWillTerminate(_ application: UIApplication) {
+         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+     }
+diff --git a/ios/App/App/SceneDelegate.swift b/ios/App/App/SceneDelegate.swift
+index c1c760d..dbd3469 100644
+--- a/ios/App/App/SceneDelegate.swift
++++ b/ios/App/App/SceneDelegate.swift
+@@ -9,6 +9,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+         guard let windowScene = scene as? UIWindowScene else { return }
+ 
++        if connectionOptions.notificationResponse != nil { MikesPushController.openPending = true }
+         window = UIWindow(windowScene: windowScene)
+         window?.rootViewController = MikesPushController()
+         window?.makeKeyAndVisible()
+@@ -16,6 +17,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
+     }
+ 
++    func sceneDidBecomeActive(_ scene: UIScene) {
++        AppDelegate.refreshRemoteNotificationRegistration()
++        guard let controller = window?.rootViewController as? MikesPushController else { return }
++        controller.emit("mikes-app-active", detail: [:])
++        controller.emitToken()
++        controller.syncBadge()
++    }
++
+     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+         SceneDelegateProxy.shared.scene(scene, openURLContexts: URLContexts)
+     }
+diff --git a/scripts/verify.mjs b/scripts/verify.mjs
+index 07f46b9..c811d31 100644
+--- a/scripts/verify.mjs
++++ b/scripts/verify.mjs
+@@ -29,8 +29,8 @@ const appDelegate=readFileSync('ios/App/App/AppDelegate.swift','utf8');
+ assert.ok(appDelegate.includes('refreshRemoteNotificationRegistration'));
+ assert.ok(appDelegate.includes('completion([.banner, .sound])'));
+ assert.ok(appDelegate.includes('"reason": "token"'));
+-assert.ok(appDelegate.includes('"mikes-app-active"'));
+-assert.ok(appDelegate.includes('syncBadge()'));
++assert.ok(native.includes('"mikes-app-active"'));
++assert.ok(native.includes('func sceneDidBecomeActive(_ scene: UIScene)') && native.includes('controller.syncBadge()'));
+ assert.ok(!readFileSync('www/index.html','utf8').includes('Mikes'));
+ const icon=readFileSync('ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png');
+ assert.equal(icon.readUInt32BE(16),icon.readUInt32BE(20));assert.ok(icon.readUInt32BE(16)>=1024);if(process.platform==='darwin')assert.equal(icon.readUInt32BE(16),1024);
